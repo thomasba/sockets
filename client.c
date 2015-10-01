@@ -84,7 +84,6 @@ int open_socket_ipv4( options * o )
 
 int open_socket_ipv6( options * o )
 {
-	/* TODO */
 	int fd = NULL;
 	struct sockaddr_in6 addr;
 	addr.sin6_family = o->type;
