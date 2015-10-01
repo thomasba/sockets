@@ -1,4 +1,11 @@
 #include "client.h"
+#include <unistd.h>
+#include "lib.h"
+#include <stdio.h>
+#include <netdb.h>
+#include <sys/socket.h>
+#include <stdlib.h>
+#include <string.h>
 
 int main( int argc, char ** argv )
 {
@@ -51,6 +58,51 @@ int main( int argc, char ** argv )
 	close(fd);
 
 	return 0;
+}
+
+int open_socket_ipv4( options * o )
+{
+	int fd = NULL;
+	struct sockaddr_in addr;
+	addr.sin_family = o->type;
+	addr.sin_port   = htons(o->port);
+	addr.sin_addr.s_addr = 0;
+	memcpy( (char*)&addr.sin_addr.s_addr, (char*)o->server->h_addr, o->server->h_length  );
+	fd = socket( o->type, SOCK_STREAM, 0 );
+	if ( fd == 0 )
+	{
+		fprintf(stderr,"Can’t open socket. Bye!\n");
+		exit(2);
+	}
+	if ( connect(fd, (struct sockaddr*) &addr, sizeof(addr)) < 0 )
+	{
+		fprintf(stderr,"Error connecting. Bye!\n");
+		exit(2);
+	}
+	return fd;
+}
+
+int open_socket_ipv6( options * o )
+{
+	/* TODO */
+	int fd = NULL;
+	struct sockaddr_in6 addr;
+	addr.sin6_family = o->type;
+	addr.sin6_port   = htons(o->port);
+	memset(addr.sin6_addr.s6_addr, 0, 8);
+	memcpy( (char*)&addr.sin6_addr.s6_addr, (char*)o->server->h_addr, o->server->h_length  );
+	fd = socket( o->type, SOCK_STREAM, 0 );
+	if ( fd == 0 )
+	{
+		fprintf(stderr,"Can’t open socket. Bye!\n");
+		exit(2);
+	}
+	if ( connect(fd, (struct sockaddr*) &addr, sizeof(addr)) < 0 )
+	{
+		fprintf(stderr,"Error connecting. Bye!\n");
+		exit(2);
+	}
+	return fd;
 }
 
 void readOptions(int argc, char **argv, options * o)
