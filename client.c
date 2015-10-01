@@ -7,12 +7,53 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <pthread.h>
+
+void* thread_read(void * fdv)
+{
+	int fd = (int) fdv;
+	char c;
+	while(1) {
+		c = fgetc(stdin);
+		if ( c == EOF )
+		{
+			close(fd);
+			exit(0);
+		}
+		if( write( fd, &c, 1 ) != 1)
+		{
+			fprintf(stderr,"Error writing to socket!\n");
+			close(fd);
+			exit(2);
+		}
+	}
+	close(fd);
+	return NULL;
+}
+
+void* thread_write(void * fdv)
+{
+	int fd = (int) fdv;
+	char c;
+	while(1) {
+		if ( read( fd, &c, 1 ) != 1 || c == EOF )
+		{
+			close(fd);
+			exit(0);
+		}
+		putchar(c);
+	}
+	close(fd);
+	return NULL;
+}
+
 int main( int argc, char ** argv )
 {
 	int fd = 0;
-	char c;
 	options o = {AF_UNSPEC, NULL, NULL, 0};
 	readOptions(argc, argv, &o);
+	pthread_t tw, tr;
+
 	if ( o.type == AF_UNSPEC )
 	{
 		o.server = gethostbyname( o.address );
@@ -44,18 +85,10 @@ int main( int argc, char ** argv )
 		return 2;
 	}
 
-	while(1) {
-		c = fgetc(stdin);
-		if ( c == EOF )
-			break;
-		if( write( fd, &c, 1 ) != 1)
-		{
-			fprintf(stderr,"Error writing to socket!\n");
-			close(fd);
-			return 2;
-		}
-	}
-	close(fd);
+	pthread_create(&tw, NULL, &thread_write, (void*)fd);
+	pthread_create(&tr, NULL, &thread_read, (void*)fd);
+	pthread_join(tw, NULL);
+	pthread_join(tr, NULL);
 
 	return 0;
 }
@@ -107,7 +140,7 @@ int open_socket_ipv6( options * o )
 void readOptions(int argc, char **argv, options * o)
 {
 	char c;
-	while (( c = getopt (argc, argv, "46h") ) != -1)
+	while (( c = getopt (argc, argv, "46hl") ) != -1)
 	{
 		switch(c)
 		{
@@ -120,6 +153,9 @@ void readOptions(int argc, char **argv, options * o)
 			case 'h':
 				print_usage(argc,argv);
 				exit(0);
+			case 'l':
+				fprintf(stderr,"Not yet implemented!\n");
+				exit(1);
 			case '?':
 				fprintf( stderr, "Unknown option `-%c'", optopt );
 				print_usage(argc,argv);
@@ -138,5 +174,9 @@ void readOptions(int argc, char **argv, options * o)
 void print_usage(int argc, char ** argv)
 {
 	printf("Usage:\n");
-	printf("  %s [-4|-6] <hostname> <port>\n", argv[0]);
+	printf("  %s [-4|-6] [-l] <hostname> <port>\n", argv[0]);
+	printf("Options:\n");
+	printf("  -4  Use IPv4");
+	printf("  -6  Use IPv6");
+	printf("  -l  Listen on given port (not yet implemented)");
 }
