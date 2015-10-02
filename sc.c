@@ -61,8 +61,8 @@ int main( int argc, char ** argv )
 	struct sockaddr* saddr = NULL;
 	int c = 0;
 	options o = {AF_UNSPEC, NULL, NULL, 0, 0};
-	readOptions(argc, argv, &o);
 	pthread_t tw, tr;
+	readOptions(argc, argv, &o);
 
 	if ( o.type == AF_UNSPEC )
 	{
