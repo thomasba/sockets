@@ -10,7 +10,8 @@
 
 int fd = 0, ns = 0;
 
-void close_fd() {
+void close_fd()
+{
 	if ( fd != 0 )
 	{
 		close(fd);
@@ -24,7 +25,8 @@ void close_fd() {
 void* thread_read(void * fdv)
 {
 	char c;
-	while(1) {
+	while(1)
+	{
 		c = fgetc(stdin);
 		if ( c == EOF )
 		{
@@ -70,7 +72,8 @@ int main( int argc, char ** argv )
 	{
 		o.server = gethostbyname2( o.address, o.type );
 	}
-	if ( o.server == NULL ) {
+	if ( o.server == NULL )
+	{
 		fprintf(stderr, "Couldn’t resolve '%s'!\n", o.address);
 		exit(2);
 	}
@@ -135,7 +138,9 @@ void open_socket_ipv6( options * o, struct sockaddr *saddr )
 	memcpy( (char*)&addr->sin6_addr.s6_addr, (char*)o->server->h_addr, o->server->h_length  );
 	open_socket(o, saddr, (struct sockaddr*) addr, sizeof(struct sockaddr_in6) );
 }
-void open_socket( options * o, struct sockaddr *saddr, struct sockaddr* addr, int l ) {
+
+void open_socket( options * o, struct sockaddr *saddr, struct sockaddr* addr, int l )
+{
 	int true = 1;
 	fd = socket( o->type, SOCK_STREAM, 0 );
 	if ( fd == 0 )
@@ -190,7 +195,8 @@ void readOptions(int argc, char **argv, options * o)
 				break;
 		}
 	}
-	if ( (argc-optind) != 2 ) {
+	if ( (argc-optind) != 2 )
+	{
 		print_usage(argc,argv);
 		exit(1);
 	}
