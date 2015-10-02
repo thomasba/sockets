@@ -230,7 +230,7 @@ void print_usage(int argc, char ** argv)
 	printf("Usage:\n");
 	printf("  %s [-4|-6] [-l] <hostname> <port>\n", argv[0]);
 	printf("Options:\n");
-	printf("  -4  Use IPv4");
-	printf("  -6  Use IPv6");
-	printf("  -l  Listen on given port");
+	printf("  -4  Use IPv4\n");
+	printf("  -6  Use IPv6\n");
+	printf("  -l  Listen on given port\n");
 }
