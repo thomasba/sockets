@@ -1,6 +1,5 @@
-#include "client.h"
+#include "sc.h"
 #include <unistd.h>
-#include "lib.h"
 #include <stdio.h>
 #include <netdb.h>
 #include <sys/socket.h>
@@ -80,11 +79,11 @@ int main( int argc, char ** argv )
 
 	if ( o.type == AF_INET )
 	{
-		fd = open_socket_ipv4(&o, saddr);
+		open_socket_ipv4(&o, saddr);
 	}
 	else if ( o.type == AF_INET6 )
 	{
-		fd = open_socket_ipv6(&o, saddr);
+		open_socket_ipv6(&o, saddr);
 	}
 	else
 	{
@@ -115,15 +114,29 @@ int main( int argc, char ** argv )
 	return 0;
 }
 
-int open_socket_ipv4( options * o, struct sockaddr* saddr )
+void open_socket_ipv4( options * o, struct sockaddr* saddr )
 {
-	int fd = 0, true = 1;
 	struct sockaddr_in *addr;
 	addr = malloc( sizeof(struct sockaddr_in) );
 	addr->sin_family = o->type;
 	addr->sin_port   = htons(o->port);
 	addr->sin_addr.s_addr = 0;
 	memcpy( (char*)&addr->sin_addr.s_addr, (char*)o->server->h_addr, o->server->h_length  );
+	open_socket(o, saddr, (struct sockaddr*) addr, sizeof(struct sockaddr_in) );
+}
+
+void open_socket_ipv6( options * o, struct sockaddr *saddr )
+{
+	struct sockaddr_in6 *addr;
+	addr = malloc(sizeof(struct sockaddr));
+	addr->sin6_family = o->type;
+	addr->sin6_port   = htons(o->port);
+	memset(addr->sin6_addr.s6_addr, 0, 16);
+	memcpy( (char*)&addr->sin6_addr.s6_addr, (char*)o->server->h_addr, o->server->h_length  );
+	open_socket(o, saddr, (struct sockaddr*) addr, sizeof(struct sockaddr_in6) );
+}
+void open_socket( options * o, struct sockaddr *saddr, struct sockaddr* addr, int l ) {
+	int true = 1;
 	fd = socket( o->type, SOCK_STREAM, 0 );
 	if ( fd == 0 )
 	{
@@ -132,7 +145,7 @@ int open_socket_ipv4( options * o, struct sockaddr* saddr )
 	}
 	if ( o->listen == 1 )
 	{
-		if ( bind(fd, (struct sockaddr*) addr, sizeof(struct sockaddr_in)) < 0 )
+		if ( bind(fd, addr, l) < 0 )
 		{
 			fprintf(stderr,"bind failed!\n");
 			exit(2);
@@ -142,50 +155,13 @@ int open_socket_ipv4( options * o, struct sockaddr* saddr )
 	}
 	else
 	{
-		if ( connect(fd, (struct sockaddr*) addr, sizeof(struct sockaddr_in)) < 0 )
-		{
-			fprintf(stderr,"Error connecting. Bye!\n");
-			exit(2);
-		}
-	}
-	saddr = (struct sockaddr*)addr;
-	return fd;
-}
-
-int open_socket_ipv6( options * o, struct sockaddr *saddr )
-{
-	int fd = NULL;
-	struct sockaddr_in6 *addr;
-	addr = malloc(sizeof(struct sockaddr));
-	addr->sin6_family = o->type;
-	addr->sin6_port   = htons(o->port);
-	memset(addr->sin6_addr.s6_addr, 0, 16);
-	memcpy( (char*)&addr->sin6_addr.s6_addr, (char*)o->server->h_addr, o->server->h_length  );
-	fd = socket( o->type, SOCK_STREAM, 0 );
-	if ( fd == 0 )
-	{
-		fprintf(stderr,"Can’t open socket. Bye!\n");
-		exit(2);
-	}
-	if ( o->listen == 1 )
-	{
-		if ( bind(fd, (struct sockaddr*) addr, sizeof(struct sockaddr_in6)) < 0 )
-		{
-			fprintf(stderr,"bind failed!\n");
-			exit(2);
-		}
-		listen(fd, 5);
-	}
-	else
-	{
-		if ( connect(fd, (struct sockaddr*) addr, sizeof(struct sockaddr_in6)) < 0 )
+		if ( connect(fd, addr, l) < 0 )
 		{
 			fprintf(stderr,"Error connecting. Bye!\n");
 			exit(2);
 		}
 	}
 	saddr = (struct sockaddr*)&addr;
-	return fd;
 }
 
 void readOptions(int argc, char **argv, options * o)
@@ -220,6 +196,27 @@ void readOptions(int argc, char **argv, options * o)
 	}
 	o->address = argv[optind];
 	o->port    = atoi(argv[optind+1]);
+}
+
+void print_ip_address( char * a, int type  )
+{
+	if ( type == AF_INET6 )
+	{
+		int i;
+		for(i=0; i<7; i++)
+		{
+			printf("%02x%02x:", (unsigned char)a[2*i], (unsigned char)a[2*i+1]);
+		}
+		printf("%02x%02x", (unsigned char)a[14], (unsigned char)a[15]);
+	}
+	else if ( type == AF_INET)
+	{
+		printf("%u.%u.%u.%u", (unsigned char)a[0], (unsigned char)a[1], (unsigned char)a[2], (unsigned char)a[3]);
+	}
+	else
+	{
+		fprintf(stderr, "%s:%d#%s: Invalid type!", __FILE__, __LINE__, __func__);
+	}
 }
 
 void print_usage(int argc, char ** argv)
